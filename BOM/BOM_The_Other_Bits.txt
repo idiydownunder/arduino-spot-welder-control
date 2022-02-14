@@ -1,0 +1,10 @@
+Here is a list of other parts you will need to source to complete this project. 
+
+- Arduino Nano 328P
+- OLED 0.96
+- SSR-40 DA-H (and Heat Sink)
+- Modified Microwave Transformer
+- Welding Probes
+- NO Non Latching Switch
+- Mains Transformer with output between 14-30v AC at 1A
+- 12v DC Fan
