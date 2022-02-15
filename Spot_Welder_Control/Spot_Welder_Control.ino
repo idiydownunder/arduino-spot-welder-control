@@ -1,9 +1,15 @@
 //===============================================
 // SPOT WELDER CONTROL
+//===============================================
 //
-// By: Digital Jester
-// Version: 1.0
+// Coded By: Digital Jester
+// For: iDIY DOWN UNDER
+// Version: 1.0b
 // 
+//===============================================
+#define ver "1.0b"
+
+
 //===============================================
 // Inlude Libaries
 //===============================================
@@ -47,6 +53,7 @@
 #define icoPower 78
 #define icoBack 79
 #define icoWifi 80
+
 //===============================================
 // Define Fonts
 //===============================================
@@ -353,6 +360,8 @@ void loop() {
         if(menupos==1){screen=2;menupos=0;}
         if(menupos==2){screen=3;menupos=0;}
 
+
+        if(menupos==5){screen=6;menupos=0;}
         if(menupos==6){screen=90;menupos=0;}
       break;
 
@@ -364,7 +373,7 @@ void loop() {
       case 2:        
         if(menupos==3){
           screen=0;
-          menupos=0;
+          menupos=1;
         }else{
           if(menuopt){
             menuopt=false;
@@ -377,7 +386,7 @@ void loop() {
       case 3:        
         if(menupos==3){
           screen=0;
-          menupos=0;
+          menupos=2;
         }else{
           if(menuopt){
             menuopt=false;
@@ -387,9 +396,14 @@ void loop() {
         }
       break;
 
+      case 6:
+        screen=0;
+        menupos=5;
+      break;
+      
       case 90:
         screen=0;
-        menupos=0;
+        menupos=6;
       break;
     }
 
@@ -399,14 +413,18 @@ void loop() {
   }
 }
 
+//===============================================
+// GUI / DISPLAY
+//===============================================
 void draw(){
   switch (screen){
     case 0:
+      // MAIN MENU
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
-        u8g2.setCursor(40,13); // Set Cursor
-        u8g2.print("MENU");
+        u8g2.setCursor(25,13); // Set Cursor
+        u8g2.print("MAIN  MENU");
         u8g2.drawHLine(2,18,124);
       if(menupos<=2){
         u8g2.setCursor(2,31); // Set Cursor
@@ -444,7 +462,7 @@ void draw(){
         u8g2.setCursor(2,31); // Set Cursor
         if(menupos==6){u8g2.print(">");}
         u8g2.setCursor(10,31); // Set Cursor
-        u8g2.print("Temp");
+        u8g2.print("Temperature");
         
         u8g2.setCursor(2,44); // Set Cursor
         if(menupos==7){u8g2.print(">");}
@@ -463,7 +481,7 @@ void draw(){
     break;
 
     case 1:
-    
+      // SINGLE PULSE
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
@@ -484,10 +502,10 @@ void draw(){
         drawIcon(0,16,icoWave);
       } while ( u8g2.nextPage() ); // End Screen
 
-    
     break;
 
     case 2:
+      // DOUBLE PULSE
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
@@ -534,11 +552,12 @@ void draw(){
     break;
 
     case 3:
+      // SETTINGS
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
         //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
-        u8g2.setCursor(30,13); // Set Cursor
+        u8g2.setCursor(32,13); // Set Cursor
         u8g2.print("SETTINGS");
         u8g2.drawHLine(2,18,124);
         //u8g2.setFont(bigFont);
@@ -577,13 +596,85 @@ void draw(){
         
         drawIcon(0,16,icoSpan);
       } while ( u8g2.nextPage() ); // End Screen
+      
     break;
 
-    case 90:
+    case 4:
+      // SAVE
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
-        u8g2.drawStr(30,13,"TEMP");
+        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
+        u8g2.setCursor(20,15); // Set Cursor
+        u8g2.print("SAVE");
+        u8g2.drawHLine(2,20,124);
+        u8g2.setFont(bigFont);
+        u8g2.setCursor(52,55);
+        //if(sp>9){u8g2.setCursor(39,55);} // Set Cursor
+        //if(sp>99){u8g2.setCursor(27,55);} // Set Cursor
+        //if(sp>999){u8g2.setCursor(14,55);} // Set Cursor
+        //u8g2.print(sp);
+        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
+        u8g2.setFont(smlFont); // Set Font
+        //u8g2.print(" ms");
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoWave);
+      } while ( u8g2.nextPage() ); // End Screen
+
+    break;
+
+    case 5:
+      // LOAD
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
+        u8g2.setCursor(20,15); // Set Cursor
+        u8g2.print("LOAD");
+        u8g2.drawHLine(2,20,124);
+        u8g2.setFont(bigFont);
+        u8g2.setCursor(52,55);
+        //if(sp>9){u8g2.setCursor(39,55);} // Set Cursor
+        //if(sp>99){u8g2.setCursor(27,55);} // Set Cursor
+        //if(sp>999){u8g2.setCursor(14,55);} // Set Cursor
+        //u8g2.print(sp);
+        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
+        u8g2.setFont(smlFont); // Set Font
+        //u8g2.print(" ms");
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoWave);
+      } while ( u8g2.nextPage() ); // End Screen
+
+    break;
+
+    case 6:
+      // ABOUT
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        u8g2.drawStr(40,13,"ABOUT");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(10,31); // Set Cursor
+        u8g2.print("iDIY Down Under");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Spot Welder Control");
+        u8g2.setCursor(22,60); // Set Cursor
+        u8g2.print("Version: ");
+        u8g2.print(ver);
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
+      } while ( u8g2.nextPage() ); // End Screen
+
+    break;
+
+    case 90:
+      // TEMPERATURE
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        u8g2.drawStr(18,13,"TEMPERATURE");
         u8g2.drawHLine(2,18,124);
 
         u8g2.setCursor(2,31); // Set Cursor
@@ -601,7 +692,7 @@ void draw(){
         }
         
         drawIcon(0,16,icoESign);
-        drawIcon(112,16,icoESign);
+        //drawIcon(112,16,icoESign);
         
       } while ( u8g2.nextPage() ); // End Screen
     break;
