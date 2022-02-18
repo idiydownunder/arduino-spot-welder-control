@@ -4,16 +4,19 @@
 //
 // Coded By: Digital Jester
 // For: iDIY DOWN UNDER
-// Version: 1.0b
+// Version: 0.1 beta
+//
+// GitHub: https://github.com/Digital-Jester/arduino-spot-welder-control
 // 
 //===============================================
-#define ver "1.0b"
+#define ver "0.1 beta"
 
 
 //===============================================
 // Inlude Libaries
 //===============================================
 #include <Wire.h>
+#include <EEPROM.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
 
@@ -62,6 +65,30 @@
 #define smlIcon u8g2_font_open_iconic_embedded_2x_t
 #define bigIcon u8g2_font_open_iconic_embedded_4x_t
 
+
+#define def_sp 750
+#define min_sp 10
+#define max_sp 2500
+
+#define def_p1 150
+#define def_p2 550
+#define min_p 10
+#define max_p 1000
+
+#define def_dpd 100
+#define min_dpd 10
+#define max_dpd 2000
+
+#define def_inc 10
+#define min_inc 0
+#define max_inc 100
+
+#define def_weldDelay 5
+#define min_weldDelay 0
+#define max_weldDelay 10
+
+#define def_playtone true
+
 //===============================================
 // Declare Varibles
 //===============================================
@@ -69,25 +96,30 @@ volatile boolean TurnDetected = false;
 volatile boolean up = false;
 volatile boolean button = false;
 volatile boolean weld = false;
-volatile boolean playtone = false;
+volatile boolean playtone = def_playtone;
 volatile boolean menuopt = false;
 unsigned long db=0;
 unsigned long tdb=0;
 
-int sp = 750;
-int p1 = 200;
-int p2 = 450;
-int dpd = 250;
+int sp = def_sp;
 
-byte inc = 10;
+int p1 = def_p1;
+int dpd = def_dpd;
+int p2 = def_p2;
+
+byte inc = def_inc;
+byte weldDelay = def_weldDelay;
+
 byte screen = 0;
 byte screenRem = 0;
 byte menupos = 0;
 byte count=0;
-byte weldDelay = 5;
+
 
 float temp0 = 0;
 float temp1 = 0;
+
+
 
 //===============================================
 // Setup Screen Object
@@ -119,7 +151,21 @@ void doublePulse(){
   digitalWrite(pulse,LOW);
 }
 int chkMax(int chk){
-  if(chk>1000){chk=1000;}
+  if(screen==1){
+    if(chk>max_sp){chk=max_sp;}
+  }
+  
+  if(screen==2){
+    if(menupos==0){if(chk>max_p){chk=max_p;}}
+    if(menupos==1){if(chk>max_dpd){chk=max_dpd;}}
+    if(menupos==2){if(chk>max_p){chk=max_p;}}
+  }
+
+  if(screen==3){
+    if(menupos==0){if(chk>max_inc){chk=max_inc;}}
+    if(menupos==1){if(chk>max_weldDelay){chk=max_weldDelay;}}
+  }
+  
   return chk;
 }
 int chkMin(int chk){
@@ -131,11 +177,74 @@ float chkTemp(int pin){
   float tempC = (vol - .5) * 100;
   return tempC;
 }
+void SAVE_SETTINGS()
+{
+  CHK_SETTINGS();
+  
+  EEPROM.put(0,sp); 
+  EEPROM.put(4,p1);
+  EEPROM.put(8,dpd);
+  EEPROM.put(12,p2);
+  EEPROM.put(16,inc);
+  EEPROM.put(20,weldDelay);
+  EEPROM.put(24,playtone);
+}
+void LOAD_SETTINGS()
+{
+  EEPROM.get(0,sp); 
+  EEPROM.get(4,p1);
+  EEPROM.get(8,dpd);
+  EEPROM.get(12,p2);
+  EEPROM.get(16,inc);
+  EEPROM.get(20,weldDelay);
+  EEPROM.get(24,playtone);
+
+  CHK_SETTINGS();
+  
+}
+void CHK_SETTINGS(){
+  
+  if(isnan(sp)){sp=def_sp;}
+  if(sp<min_sp){sp=def_sp;}
+  if(sp>max_sp){sp=def_sp;}
+
+  if(isnan(p1)){p1=def_p1;}
+  if(p1<min_p){p1=def_p1;}
+  if(p1>max_p){p1=def_p1;}
+
+  if(isnan(dpd)){dpd=def_dpd;}
+  if(dpd<min_dpd){dpd=def_dpd;}
+  if(dpd>max_dpd){dpd=def_dpd;}
+
+  if(isnan(p2)){p2=def_p2;}
+  if(p2<min_p){p2=def_p2;}
+  if(p2>max_p){p2=def_p2;}
+
+  if(isnan(inc)){inc=def_inc;}
+  if(inc<min_inc){inc=def_inc;}
+  if(inc>max_inc){inc=def_inc;}
+
+  if(isnan(weldDelay)){weldDelay=def_weldDelay;}
+  if(weldDelay<min_weldDelay){weldDelay=def_weldDelay;}
+  if(weldDelay>max_weldDelay){weldDelay=def_weldDelay;}
+  
+}
+void DEF_SETTINGS(){
+  sp = def_sp;
+
+  p1 = def_p1;
+  dpd = def_dpd;
+  p2 = def_p2;
+
+  inc = def_inc;
+  weldDelay = def_weldDelay;
+  playtone = def_playtone;
+}
 
 void setup() {
   // put your setup code here, to run once:
   
-  // Set Pin Modes
+  // Setup Pin Modes
   pinMode(sw, INPUT_PULLUP);
   pinMode(clk, INPUT);
   pinMode(dt, INPUT);
@@ -151,19 +260,21 @@ void setup() {
   // Add Interruts
   attachInterrupt(digitalPinToInterrupt(clk), turn, FALLING);
   attachInterrupt(digitalPinToInterrupt(trigger), triggered, FALLING);
-  
+
+  // Setup To Run
   u8g2.begin();  // Start LCD Display
   db=millis();  // Set Debonce
   tdb=millis(); // Set Debonce
+  LOAD_SETTINGS(); // Load Settings From EPROM
+  draw(); // Draw GUI
   
-  draw();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  
-  
-  
+//
+// put your main code here, to run repeatedly:  
+//
+
 //===============================================
 // WELDING
 //===============================================
@@ -224,10 +335,10 @@ void loop() {
       case 0:
         if(up){
           menupos++;
-          if (menupos>6){menupos=0;}
+          if (menupos>7){menupos=0;}
         }else{
           menupos--;
-          if (menupos>6){menupos=6;}
+          if (menupos>7){menupos=7;}
         }
       break;
 
@@ -255,10 +366,10 @@ void loop() {
       if(menupos==1){
         if(up){
           dpd=dpd+inc;
-          if(dpd>1000){dpd=1000;}
+          if(dpd>max_dpd){dpd=max_dpd;}
         }else{
           dpd=dpd-inc;
-          if(dpd<10){dpd=10;}
+          if(dpd<min_dpd){dpd=min_dpd;}
         }
       }
       if(menupos==2){
@@ -286,6 +397,7 @@ void loop() {
         if(menupos==0){
           if(up){
             inc++;
+            inc=chkMax(inc);
           }else{
             inc--;
           }
@@ -293,6 +405,7 @@ void loop() {
       if(menupos==1){
         if(up){
           weldDelay++;
+          weldDelay=chkMax(weldDelay);
         }else{
           weldDelay--;
         }
@@ -360,9 +473,13 @@ void loop() {
         if(menupos==1){screen=2;menupos=0;}
         if(menupos==2){screen=3;menupos=0;}
 
-
+        if(menupos==3){screen=4;menupos=0;}
+        if(menupos==4){screen=5;menupos=0;}
         if(menupos==5){screen=6;menupos=0;}
+
         if(menupos==6){screen=90;menupos=0;}
+        if(menupos==7){screen=8;menupos=0;}
+        
       break;
 
       case 1:
@@ -396,9 +513,24 @@ void loop() {
         }
       break;
 
+      case 4:
+        screen=0;
+        menupos=3;
+      break;
+
+      case 5:
+        screen=0;
+        menupos=4;
+      break;
+
       case 6:
         screen=0;
         menupos=5;
+      break;
+
+      case 8:
+        screen=0;
+        menupos=7;
       break;
       
       case 90:
@@ -446,17 +578,17 @@ void draw(){
         u8g2.setCursor(2,31); // Set Cursor
         if(menupos==3){u8g2.print(">");}
         u8g2.setCursor(10,31); // Set Cursor
-        u8g2.print("Save");
+        u8g2.print("Save Settings");
         
         u8g2.setCursor(2,44); // Set Cursor
         if(menupos==4){u8g2.print(">");}
         u8g2.setCursor(10,44); // Set Cursor
-        u8g2.print("Load");
+        u8g2.print("Load Settings");
 
         u8g2.setCursor(2,57); // Set Cursor
         if(menupos==5){u8g2.print(">");}
         u8g2.setCursor(10,57); // Set Cursor
-        u8g2.print("About");
+        u8g2.print("Default Settings");
       }
       if((menupos>5)&&(menupos<=8)){
         u8g2.setCursor(2,31); // Set Cursor
@@ -467,7 +599,7 @@ void draw(){
         u8g2.setCursor(2,44); // Set Cursor
         if(menupos==7){u8g2.print(">");}
         u8g2.setCursor(10,44); // Set Cursor
-        //u8g2.print("Load");
+        u8g2.print("About");
 
         u8g2.setCursor(2,57); // Set Cursor
         if(menupos==8){u8g2.print(">");}
@@ -600,54 +732,160 @@ void draw(){
     break;
 
     case 4:
-      // SAVE
+      // SAVE SETTINGS
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
-        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
-        u8g2.setCursor(20,15); // Set Cursor
-        u8g2.print("SAVE");
-        u8g2.drawHLine(2,20,124);
-        u8g2.setFont(bigFont);
-        u8g2.setCursor(52,55);
-        //if(sp>9){u8g2.setCursor(39,55);} // Set Cursor
-        //if(sp>99){u8g2.setCursor(27,55);} // Set Cursor
-        //if(sp>999){u8g2.setCursor(14,55);} // Set Cursor
-        //u8g2.print(sp);
-        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
-        u8g2.setFont(smlFont); // Set Font
-        //u8g2.print(" ms");
+        u8g2.drawStr(40,13,"SAVE");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(10,31); // Set Cursor
+        //u8g2.print("iDIY Down Under");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Saving Settings...");
+        u8g2.setCursor(22,60); // Set Cursor
+        //u8g2.print("Settings...");
+        //u8g2.print(ver);
         //if(menupos==1){drawIcon(112,64,icoBack);}
-        drawIcon(0,16,icoWave);
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
       } while ( u8g2.nextPage() ); // End Screen
+
+      SAVE_SETTINGS();
+
+      delay(750);
+
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        u8g2.drawStr(40,13,"SAVE");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(10,31); // Set Cursor
+        //u8g2.print("iDIY Down Under");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Saving Settings...");
+        u8g2.setCursor(2,60); // Set Cursor
+        u8g2.print("DONE.");
+        //u8g2.print(ver);
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
+      } while ( u8g2.nextPage() ); // End Screen
+
+      delay(1500);
+
+      screen=0;
+      menupos=3;
+
+      draw();
 
     break;
 
     case 5:
-      // LOAD
+      // LOAD SETTINGS
       u8g2.firstPage(); // Start Screen
       do {
         u8g2.setFont(smlFont); // Set Font
-        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
-        u8g2.setCursor(20,15); // Set Cursor
-        u8g2.print("LOAD");
-        u8g2.drawHLine(2,20,124);
-        u8g2.setFont(bigFont);
-        u8g2.setCursor(52,55);
-        //if(sp>9){u8g2.setCursor(39,55);} // Set Cursor
-        //if(sp>99){u8g2.setCursor(27,55);} // Set Cursor
-        //if(sp>999){u8g2.setCursor(14,55);} // Set Cursor
-        //u8g2.print(sp);
-        //u8g2.setFont(u8g2_font_lucasfont_alternate_tr);
-        u8g2.setFont(smlFont); // Set Font
-        //u8g2.print(" ms");
+        u8g2.drawStr(40,13,"LOAD");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(10,31); // Set Cursor
+        //u8g2.print("iDIY Down Under");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Loading Settings...");
+        u8g2.setCursor(22,60); // Set Cursor
+        //u8g2.print("Settings...");
+        //u8g2.print(ver);
         //if(menupos==1){drawIcon(112,64,icoBack);}
-        drawIcon(0,16,icoWave);
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
       } while ( u8g2.nextPage() ); // End Screen
+
+      LOAD_SETTINGS();
+
+      delay(750);
+
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        u8g2.drawStr(40,13,"LOAD");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(10,31); // Set Cursor
+        //u8g2.print("iDIY Down Under");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Loading Settings...");
+        u8g2.setCursor(2,60); // Set Cursor
+        u8g2.print("DONE.");
+        //u8g2.print(ver);
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
+      } while ( u8g2.nextPage() ); // End Screen
+
+      delay(1500);
+
+      screen=0;
+      menupos=4;
+
+      draw();
 
     break;
 
     case 6:
+      // DEFAULT SETTINGS
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        u8g2.drawStr(40,13,"DEFAULT");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(2,31); // Set Cursor
+        u8g2.print("Applying Default");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Settings...");
+        u8g2.setCursor(2,60); // Set Cursor
+        //u8g2.print("Settings...");
+        //u8g2.print(ver);
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
+      } while ( u8g2.nextPage() ); // End Screen
+
+      DEF_SETTINGS();
+
+      delay(750);
+
+      u8g2.firstPage(); // Start Screen
+      do {
+        u8g2.setFont(smlFont); // Set Font
+        u8g2.drawStr(40,13,"DEFAULT");
+        u8g2.drawHLine(2,18,124);
+
+        u8g2.setCursor(2,31); // Set Cursor
+        u8g2.print("Applying Default");
+        u8g2.setCursor(2,45); // Set Cursor
+        u8g2.print("Settings...");
+        u8g2.setCursor(2,60); // Set Cursor
+        u8g2.print("DONE.");
+        //u8g2.print(ver);
+        //if(menupos==1){drawIcon(112,64,icoBack);}
+        drawIcon(0,16,icoBell);
+        //drawIcon(112,16,icoBell);
+      } while ( u8g2.nextPage() ); // End Screen
+
+      delay(1500);
+
+      screen=0;
+      menupos=5;
+
+      draw();
+      
+    break;
+
+
+    case 8:
       // ABOUT
       u8g2.firstPage(); // Start Screen
       do {
