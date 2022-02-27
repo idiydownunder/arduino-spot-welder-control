@@ -1,6 +1,6 @@
-//===============================================
+//===================================================================================
 // SPOT WELDER CONTROL
-//===============================================
+//===================================================================================
 //
 // Coded By: Digital Jester
 // For: iDIY DOWN UNDER
@@ -8,37 +8,73 @@
 //
 // GitHub: https://github.com/Digital-Jester/arduino-spot-welder-control
 // 
-//===============================================
+//===================================================================================
 #define ver "0.1 beta"
 
 
-//===============================================
+//===================================================================================
 // Inlude Libaries
-//===============================================
+//===================================================================================
 #include <Wire.h>
 #include <EEPROM.h>
 #include <Arduino.h>
 #include <U8g2lib.h>
 
-//===============================================
+//===================================================================================
 // Define Pins
-//===============================================
+//===================================================================================
+//Rotary Encoder Pins
 #define clk 3
 #define dt 4
 #define sw 5
 
-#define trigger 2
-#define pulse 6
-#define tonepin 7
+#define trigger 2 // Trigger Welding Switch
+#define pulse 6   // Welding Pulse Pin
+#define tonepin 7 // Buzzer Pin
 
-#define fan 8
+#define fan 8     // Cooling Fan I/O Pin 
 
-#define tempA A0
-#define tempB A1
+#define tempA A0  // Temp Sen. 0 Pin
+#define tempB A1  // Temp Sen. 1 Pin
 
-//===============================================
+//===================================================================================
+// Define Default Values and Limits
+//===================================================================================
+
+#define def_sp 750  // Single Pulse Default Time
+#define min_sp 10   // Single Pulse Min Time
+#define max_sp 2500 // Single Pulse Max Time
+
+#define def_p1 150  // Double Pulse Default Time (First Pulse)
+#define def_p2 550  // Double Pulse Default Time (Second Pulse)
+#define min_p 10    // Double Pulse Min Time
+#define max_p 1000  // Double Pulse Max Time
+
+#define def_dpd 100 // Double Pulse Delay Default Time
+#define min_dpd 10  // Double Pulse Delay Min Time
+#define max_dpd 2000// Double Pulse Delay Max Time
+
+#define def_inc 10  // Pulse Incrament Default Value
+#define min_inc 1   // Pulse Incrament Min Value
+#define max_inc 100 // Pulse Incrament Max Value
+
+#define def_weldDelay 5   // Weld Delay Timer Default Time
+#define min_weldDelay 0   // Weld Delay Timer Min Time
+#define max_weldDelay 10  // Weld Delay Timer Max Time
+
+#define def_playtone true // Default Buzzer Status
+
+//===================================================================================
+// Define Fonts
+//===================================================================================
+#define smlFont u8g2_font_timB10_tr
+#define bigFont u8g2_font_fub25_tn
+#define smlIcon u8g2_font_open_iconic_embedded_2x_t
+#define bigIcon u8g2_font_open_iconic_embedded_4x_t
+
+//===================================================================================
 // Define Icons
-//===============================================
+//===================================================================================
 #define icoEBat 64
 #define icoBell 65
 #define icoGear 66
@@ -57,41 +93,9 @@
 #define icoBack 79
 #define icoWifi 80
 
-//===============================================
-// Define Fonts
-//===============================================
-#define smlFont u8g2_font_timB10_tr
-#define bigFont u8g2_font_fub25_tn
-#define smlIcon u8g2_font_open_iconic_embedded_2x_t
-#define bigIcon u8g2_font_open_iconic_embedded_4x_t
-
-
-#define def_sp 750
-#define min_sp 10
-#define max_sp 2500
-
-#define def_p1 150
-#define def_p2 550
-#define min_p 10
-#define max_p 1000
-
-#define def_dpd 100
-#define min_dpd 10
-#define max_dpd 2000
-
-#define def_inc 10
-#define min_inc 0
-#define max_inc 100
-
-#define def_weldDelay 5
-#define min_weldDelay 0
-#define max_weldDelay 10
-
-#define def_playtone true
-
-//===============================================
-// Declare Varibles
-//===============================================
+//===================================================================================
+// Declare Global Run Time Varibles
+//===================================================================================
 volatile boolean TurnDetected = false;
 volatile boolean up = false;
 volatile boolean button = false;
@@ -115,33 +119,34 @@ byte screenRem = 0;
 byte menupos = 0;
 byte count=0;
 
-
 float temp0 = 0;
 float temp1 = 0;
 
-
-
-//===============================================
+//===================================================================================
 // Setup Screen Object
-//===============================================
+//===================================================================================
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
-//===============================================
-// Define Functions
-//===============================================
+//===================================================================================
+// Global Functions
+//===================================================================================
 void triggered() {
-    weld = true;
+  // User Ready To Weld
+    weld = true;  // Set Flag
 }
 void turn()  {
+  // User Input Detected
   TurnDetected = true;
   up = (digitalRead(clk) == digitalRead(dt));
 }
 void singlePulse(){
+  // Single Pusle Welding
   digitalWrite(pulse,HIGH);
   delay(sp);
   digitalWrite(pulse,LOW);
 }
 void doublePulse(){
+  // Double Pusle Welding
   digitalWrite(pulse,HIGH);
   delay(p1);
   digitalWrite(pulse,LOW);
@@ -151,6 +156,7 @@ void doublePulse(){
   digitalWrite(pulse,LOW);
 }
 int chkMax(int chk){
+  // Error Checking Max Values
   if(screen==1){
     if(chk>max_sp){chk=max_sp;}
   }
@@ -169,17 +175,35 @@ int chkMax(int chk){
   return chk;
 }
 int chkMin(int chk){
-  if(chk<50){chk=50;}
+  // Error Checking Min Values
+  if(screen==1){
+    if(chk<min_sp){chk=min_sp;}
+  }
+  
+  if(screen==2){
+    if(menupos==0){if(chk<min_p){chk=min_p;}}
+    if(menupos==1){if(chk<min_dpd){chk=min_dpd;}}
+    if(menupos==2){if(chk<min_p){chk=min_p;}}
+  }
+
+  if(screen==3){
+    if(menupos==0){if(chk<min_inc || chk==255){chk=min_inc;}}
+    if(menupos==1){if(chk<min_weldDelay || chk>max_weldDelay){chk=min_weldDelay;}}
+  }
+  
   return chk;
 }
 float chkTemp(int pin){
+  // Check Temp, Make Calc's and Return Value
   float vol = (analogRead(pin)/1024.0) * 5;
   float tempC = (vol - .5) * 100;
   return tempC;
 }
 void SAVE_SETTINGS()
 {
-  CHK_SETTINGS();
+  // Save Settings To EPROM
+  
+  CHK_SETTINGS(); // Check Settings Are Correct
   
   EEPROM.put(0,sp); 
   EEPROM.put(4,p1);
@@ -191,6 +215,8 @@ void SAVE_SETTINGS()
 }
 void LOAD_SETTINGS()
 {
+  // Load Settings From EPROM
+  
   EEPROM.get(0,sp); 
   EEPROM.get(4,p1);
   EEPROM.get(8,dpd);
@@ -199,10 +225,12 @@ void LOAD_SETTINGS()
   EEPROM.get(20,weldDelay);
   EEPROM.get(24,playtone);
 
-  CHK_SETTINGS();
+  CHK_SETTINGS(); // Check Settings Are Correct
   
 }
 void CHK_SETTINGS(){
+
+  // Check Settings Are Correct
   
   if(isnan(sp)){sp=def_sp;}
   if(sp<min_sp){sp=def_sp;}
@@ -230,8 +258,11 @@ void CHK_SETTINGS(){
   
 }
 void DEF_SETTINGS(){
-  sp = def_sp;
 
+  // Load Default Settings
+  
+  sp = def_sp;
+  
   p1 = def_p1;
   dpd = def_dpd;
   p2 = def_p2;
@@ -241,46 +272,11 @@ void DEF_SETTINGS(){
   playtone = def_playtone;
 }
 
-void setup() {
-  // put your setup code here, to run once:
-  
-  // Setup Pin Modes
-  pinMode(sw, INPUT_PULLUP);
-  pinMode(clk, INPUT);
-  pinMode(dt, INPUT);
-  pinMode(trigger, INPUT_PULLUP);
-  pinMode(tempA, INPUT);
-  pinMode(tempB, INPUT);
-  pinMode(pulse,OUTPUT);
-  digitalWrite(pulse,LOW);
-  pinMode(tonepin,OUTPUT);
-  pinMode(fan,OUTPUT);
-  digitalWrite(fan,LOW);
-  
-  // Add Interruts
-  attachInterrupt(digitalPinToInterrupt(clk), turn, FALLING);
-  attachInterrupt(digitalPinToInterrupt(trigger), triggered, FALLING);
-
-  // Setup To Run
-  u8g2.begin();  // Start LCD Display
-  db=millis();  // Set Debonce
-  tdb=millis(); // Set Debonce
-  LOAD_SETTINGS(); // Load Settings From EPROM
-  draw(); // Draw GUI
-  
-}
-
-void loop() {
-//
-// put your main code here, to run repeatedly:  
-//
-
-//===============================================
-// WELDING
-//===============================================
-  if(weld){
-    
-    switch (screen){
+//===================================================================================
+// WELDING OPERATION
+//===================================================================================
+void weldNow(){
+  switch (screen){
       case 1:
         if(playtone){tone(tonepin,2093,250);}
         screenRem=screen;
@@ -325,13 +321,12 @@ void loop() {
     }
     weld=false;
     draw();
-  }
-
-//===============================================
-// USER INPUT - TURN
-//===============================================
-  if (TurnDetected) {
-    switch (screen){
+}
+//===================================================================================
+// USER INPUT - TURN DETECTED
+//===================================================================================
+void uiTurnDetected(){
+  switch (screen){
       case 0:
         if(up){
           menupos++;
@@ -400,6 +395,7 @@ void loop() {
             inc=chkMax(inc);
           }else{
             inc--;
+            inc=chkMin(inc);
           }
       }
       if(menupos==1){
@@ -408,6 +404,7 @@ void loop() {
           weldDelay=chkMax(weldDelay);
         }else{
           weldDelay--;
+          weldDelay=chkMin(weldDelay);
         }
       }
       if(menupos==2){
@@ -431,43 +428,14 @@ void loop() {
     
     draw();
     TurnDetected=false;
-    
-  }
-  
-//===============================================
-// TEMP - Debounce
-//===============================================
- if(millis()-tdb>=1000){
-  
-  tdb=millis(); // Reset Debounce
-  
-  temp0=chkTemp(tempA);
-  temp1=chkTemp(tempB);
-  
-  if (temp0<30 && temp1<30){
-    digitalWrite(fan, LOW);
-  } else {
-    digitalWrite(fan, HIGH);
-  }
-  
-  if (screen==90) {draw();}
- }
- 
-//===============================================
-// SWITCH - Debunce
-//===============================================
- if(millis()-db>=250){
-  if (digitalRead(sw) == LOW) {
-    button = true;
-    db=millis();  // Reset Debounce
-  }
- }
- //===============================================
- // USER INPUT - BUTON PRESS
- //===============================================
-  if(button){
+}
 
-    switch (screen){
+//===================================================================================
+// USER INPUT - BUTTON PRESSED
+//===================================================================================
+void uiButton(){
+  
+  switch (screen){
       case 0:
         if(menupos==0){screen=1;menupos=0;}
         if(menupos==1){screen=2;menupos=0;}
@@ -541,13 +509,11 @@ void loop() {
 
     draw();
     button=false;
-    
-  }
 }
 
-//===============================================
+//===================================================================================
 // GUI / DISPLAY
-//===============================================
+//===================================================================================
 void draw(){
   switch (screen){
     case 0:
@@ -966,8 +932,89 @@ void draw(){
   
 }
 void drawIcon(int x, int y, int icon){
-
   // Draw Icon Based On Selected
   u8g2.setFont(smlIcon); // Icons
   u8g2.drawGlyph(x, y, icon);      
+}
+
+//===================================================================================
+// SETUP
+//===================================================================================
+void setup() {
+  //
+  // put your setup code here, to run once:
+  //
+  
+  // Setup Pin Modes
+  pinMode(sw, INPUT_PULLUP);
+  pinMode(clk, INPUT);
+  pinMode(dt, INPUT);
+  pinMode(trigger, INPUT_PULLUP);
+  pinMode(tempA, INPUT);
+  pinMode(tempB, INPUT);
+  pinMode(pulse,OUTPUT);
+  digitalWrite(pulse,LOW);
+  pinMode(tonepin,OUTPUT);
+  pinMode(fan,OUTPUT);
+  digitalWrite(fan,LOW);
+  
+  // Add Interruts
+  attachInterrupt(digitalPinToInterrupt(clk), turn, FALLING);
+  attachInterrupt(digitalPinToInterrupt(trigger), triggered, FALLING);
+
+  // Setup To Run
+  u8g2.begin();  // Start LCD Display
+  db=millis();  // Set Debonce
+  tdb=millis(); // Set Debonce
+  LOAD_SETTINGS(); // Load Settings From EPROM
+  draw(); // Draw GUI
+  
+}
+
+//===================================================================================
+// LOOP
+//===================================================================================
+void loop() {
+  //
+  // put your main code here, to run repeatedly:  
+  //
+
+  if(weld){weldNow();}  // WELDING FLAGGED
+  
+  //
+  // TEMP - Debounce
+  //
+  if(millis()-tdb>=1000){
+  
+    tdb=millis(); // Reset Debounce
+  
+    temp0=chkTemp(tempA);
+    temp1=chkTemp(tempB);
+  
+    if (temp0<30 && temp1<30){
+    //if ((temp0 + temp1)/2<30){
+      digitalWrite(fan, LOW);
+    } else {
+      digitalWrite(fan, HIGH);
+    }
+  
+    if (screen==90) {draw();}
+  }
+ 
+  //
+  // BUTTON - Debunce
+  //
+  if(millis()-db>=250){
+    if (digitalRead(sw) == LOW) {
+      button = true;
+      db=millis();  // Reset Debounce
+    }
+  }
+
+  //
+  // CHECK UI
+  //
+  if(button){uiButton();} // USER INPUT - BUTTON PRESSED
+  if (TurnDetected) {uiTurnDetected();} // USER INPUT - TURN DETECTED
+ 
 }

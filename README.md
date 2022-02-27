@@ -8,7 +8,7 @@ This is my version of a DIY spot welder. I have included the PCB Gerber files, B
 
 Gerber files for PCB manufactor can be found in the Gerber folder.
 
-- Pick the newest revison
+- Pick the newest revison/version
 - Visit https://jlcpcb.com/
 - Sign In or Register
 - Click 'Order Now'
@@ -16,7 +16,7 @@ Gerber files for PCB manufactor can be found in the Gerber folder.
 - Select the Gerber .zip file
 - Select build options. (I recomend leave defaults, but change qty, color and select 'Specify a location' under 'Remove Order Numer' option. Also make sure both 'SMT Assembly' and 'Stencil' options are off as they are not needed for this.)
 - Once your happy with your selection, place order and pay.
-- Wait for PCB's to arrive
+- Wait for PCB's to arrive.
 
 ### BOM (Build of Materials)
 
@@ -27,3 +27,9 @@ Build of materials can be found the BOM folder. Most of the PCB componants can b
 - Sign In or Register
 - Click on the 'BOM Tool' option.
 - Now upload the .csv file.
+- Set colume with C##### numbers to LCSC Part Number.
+- Click Next
+- Once your happy with your selection, place order and pay.
+- Wait for parts to arrive.
+
+Now all you need to do is soure the rest of the parts in the .txt file and your ready to start building.
