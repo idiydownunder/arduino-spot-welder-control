@@ -51,3 +51,5 @@ Build of materials can be found the BOM folder. Most of the PCB components can b
 - Wait for parts to arrive.
 
 Now all you need to do is source the rest of the parts in the .txt file and your ready to start building.
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
