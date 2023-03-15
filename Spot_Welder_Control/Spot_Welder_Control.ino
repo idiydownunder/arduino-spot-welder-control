@@ -6,7 +6,7 @@
 // For: iDIY DOWN UNDER
 // Version: 0.1 beta
 //
-// GitHub: https://github.com/Digital-Jester/arduino-spot-welder-control
+// GitHub: https://github.com/idiydownunder/arduino-spot-welder-control
 // 
 //===================================================================================
 #define ver "0.1 beta"
