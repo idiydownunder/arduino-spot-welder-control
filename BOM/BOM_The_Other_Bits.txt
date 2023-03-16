@@ -5,6 +5,6 @@ Here is a list of other parts you will need to source to complete this project.
 - SSR-40 DA-H (and Heat Sink)
 - Modified Microwave Transformer
 - Welding Probes
-- NO Non Latching Switch
+- NO Non Latching Push Button Switch
 - Mains Transformer with output between 14-30v AC at 1A
 - 12v DC Fan

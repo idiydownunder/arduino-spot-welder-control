@@ -1,13 +1,19 @@
 //===================================================================================
-// SPOT WELDER CONTROL
-//===================================================================================
+//  SPOT WELDER CONTROL
+//  -------------------
 //
-// Coded By: Digital Jester
-// For: iDIY DOWN UNDER
-// Version: 0.1 beta
-//
-// GitHub: https://github.com/idiydownunder/arduino-spot-welder-control
+//  Copyright (c) 2023 iDIY Down Under
+//  Author: Julian Carmichael (aka Digital Jester)
 // 
+//  Software Version: 0.1 beta 
+//  For PCB Revision 1.0
+//
+//  GitHub: https://github.com/idiydownunder/arduino-spot-welder-control
+// 
+//  This work is licensed under a Creative Commons 
+//  Attribution-NonCommercial-ShareAlike 4.0 International License
+//  http://creativecommons.org/licenses/by-nc-sa/4.0/
+//
 //===================================================================================
 #define ver "0.1 beta"
 
